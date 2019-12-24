@@ -13,15 +13,24 @@ class TasksController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function index()
+   public function index()
+    
     {
-        $tasks = Task::paginate(25);
+        $data = [];
+        if (\Auth::check()) {
+            $user = \Auth::user();
+            $tasks = $user->tasks()->orderBy('created_at', 'desc')->paginate(10);
+            
+            $data = [
+                'user' => $user,
+                'tasks' => $tasks,
+            ];
+        }
         
-        return view('tasks.index', [
-            'tasks' => $tasks
-            ]);
+        return view('welcome', $data);
     }
-
+    
+    
     /**
      * Show the form for creating a new resource.
      *
@@ -48,10 +57,12 @@ class TasksController extends Controller
             'status' => 'required|max:10',
             'content' => 'required|max:191',
             ]);
-        $task = new Task;
-        $task->status = $request->status;
-        $task->content = $request->content;
-        $task->save();
+        
+        
+        $request->user()->tasks()->create([
+            'content' => $request->content,
+            'status' => $request->status,
+        ]);
 
         return redirect('/');
     }
